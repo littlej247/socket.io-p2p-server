@@ -18,11 +18,13 @@ function p2pSocket (socket, next, room) {
   socket.emit('numClients', numClients)
 
   socket.on('disconnect', function () {
-    delete clients[socket.id]
     delete connectedClients[socket.id]
+    delete clients[socket.id]
     Object.keys(connectedClients).forEach(function (clientId, i) {
-      var client = clients[clientId]
-      client.emit('peer-disconnect', {peerId: socket.id})
+      var client = connectedClients[clientId]
+      if (client !== socket) {
+        client.emit('peer-disconnect', {peerId: socket.id});
+      }
     })
     debug('Client gone (id=' + socket.id + ').')
   })
@@ -30,7 +32,7 @@ function p2pSocket (socket, next, room) {
   socket.on('offers', function (data) {
     // send offers to everyone in a given room
     Object.keys(connectedClients).forEach(function (clientId, i) {
-      var client = clients[clientId]
+      var client = connectedClients[clientId]
       if (client !== socket) {
         var offerObj = data.offers[i]
         var emittedOffer = {fromPeerId: socket.id, offerId: offerObj.offerId, offer: offerObj.offer}
