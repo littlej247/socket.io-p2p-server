@@ -7,14 +7,19 @@ module.exports.Server = p2pSocket
 function p2pSocket (socket, next, room) {
   clients[socket.id] = socket
   if (typeof room === 'object') {
-    var connectedClients = socket.adapter.rooms[room.name]
+    var connectedClients = {};
+    socket.adapter.rooms.get(room.name).forEach((x)=>{
+        connectedClients[x]=clients[x];
+    });
   } else {
     var connectedClients = clients
   }
-  socket.emit('numClients', Object.keys(connectedClients).length - 1)
+  var numClients = Object.keys(connectedClients).length - 1
+  socket.emit('numClients', numClients)
 
   socket.on('disconnect', function () {
     delete clients[socket.id]
+    delete connectedClients[socket.id]
     Object.keys(connectedClients).forEach(function (clientId, i) {
       var client = clients[clientId]
       client.emit('peer-disconnect', {peerId: socket.id})
