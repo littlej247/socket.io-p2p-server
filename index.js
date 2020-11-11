@@ -4,17 +4,19 @@ var clients = {}
 module.exports.clients = clients
 module.exports.Server = p2pSocket
 
-function p2pSocket (socket, next, room) {
+function p2pSocket (socket, next, roomName) {
   clients[socket.id] = socket
-  if (typeof room === 'object') {
+  if (roomName) {
     var connectedClients = {};
-    socket.adapter.rooms.get(room.name).forEach((x)=>{
+    socket.adapter.rooms.get(roomName).forEach((x)=>{
         connectedClients[x]=clients[x];
     });
   } else {
     var connectedClients = clients
   }
   var numClients = Object.keys(connectedClients).length - 1
+  //socket.adapter.nsp.to(roomName).emit('numClients', numClients)  //<-- This would send the accurate number to all clients but then the p2pready stops working
+  //sending the numClients to everyone apparently messes up the 'ready' part. 
   socket.emit('numClients', numClients)
 
   socket.on('disconnect', function () {
